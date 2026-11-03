@@ -1,15 +1,28 @@
 # Campus Competencias · Android
 
-Aplicación nativa Android construida con **Kotlin + Jetpack Compose + Material 3** sobre la misma API REST del proyecto web. No se modificaron los endpoints, los modelos de MongoDB ni la estructura del JSON: la app únicamente consume los recursos existentes y traduce las respuestas a modelos tipados de Kotlin. El único ajuste del backend es el host de escucha (`0.0.0.0`) para aceptar al emulador y a celulares de la red local.
+Aplicación nativa Android construida con **Kotlin + Jetpack Compose + Material 3** sobre la misma API REST del proyecto web. No se modificaron los endpoints, los modelos de MongoDB ni la estructura del JSON: la app únicamente consume los recursos existentes y traduce las respuestas a modelos tipados de Kotlin. Por defecto apunta a la API publicada en Render, así que funciona sin encender un backend local.
 
 ## Requisitos
 
 - Android Studio reciente (AGP 9.3.2, Gradle 9.5.0).
 - JDK 17 o superior (Android Studio incluye su propio JBR).
 - SDK de Android 37 instalado (`compileSdk`/`targetSdk` 37, `minSdk` 26).
-- Backend y MongoDB del proyecto encendidos.
+- Conexión a internet (la API por defecto está en la nube).
+- Para desarrollo local: backend y MongoDB del proyecto encendidos.
 
-## Ejecutar el backend
+## Usar la API en la nube (recomendado)
+
+La app usa por defecto:
+
+```text
+https://campus-competencias-api.onrender.com/
+```
+
+Esa URL sirve la API y la web en el mismo origen. No requiere configuración: instala el APK, abre la app y comienza a usarla desde cualquier red.
+
+> El plan gratuito de Render suspende el servicio cuando pasa un tiempo sin actividad. La primera petición puede tardar cerca de un minuto; espera la respuesta en la pantalla de conexión.
+
+## Ejecutar el backend local (desarrollo)
 
 Desde la raíz del repositorio:
 
@@ -35,13 +48,14 @@ La IP del celular es la del equipo en la red local; puede cambiar si te conectas
 2. Espera la sincronización de Gradle.
 3. Elige un emulador o un celular conectado y ejecuta la configuración `app`.
 
-`ServerSettings` centraliza la URL. Si no se sobrescribe, detecta emulador Android (`http://10.0.2.2:3001/`) o dispositivo físico (`http://192.168.80.40:3001/`). La preferencia guardada por el usuario tiene prioridad. Se puede sobrescribir con la propiedad Gradle `CAMPUS_API_BASE_URL` o `VITE_API_URL` (también como variable de entorno); el valor se inyecta en `BuildConfig.API_BASE_URL`.
+`ServerSettings` centraliza la URL. Si no hay una preferencia guardada, usa `ServerSettings.CLOUD_URL` (`https://campus-competencias-api.onrender.com/`). El emulador (`http://10.0.2.2:3001/`) y la IP local son atajos opcionales para desarrollo. Se puede sobrescribir con la propiedad Gradle `CAMPUS_API_BASE_URL` o `VITE_API_URL` (también como variable de entorno); el valor se inyecta en `BuildConfig.API_BASE_URL`.
 
-Los valores automáticos predeterminados son:
+Direcciones disponibles:
 
 ```text
-Emulador:          http://10.0.2.2:3001/
-Dispositivo físico: http://192.168.80.40:3001/
+Nube (predeterminada): https://campus-competencias-api.onrender.com/
+Emulador:              http://10.0.2.2:3001/
+Celular (Wi-Fi):       http://192.168.1.10:3001/
 ```
 
 `10.0.2.2` es la forma en que el emulador de Android ve el equipo anfitrión.
@@ -54,17 +68,21 @@ La app guarda la dirección de la API en el dispositivo (`SharedPreferences`) y 
 - **Error de conexión**: botón **Cambiar servidor**.
 - **Mi perfil → Conexión**: botón **Cambiar servidor**.
 
-El diálogo acepta `192.168.1.10:3001`, `http://192.168.1.10:3001` o una URL completa. Incluye un atajo para el emulador y valida la dirección antes de guardar. Al cambiar de servidor se cierra la sesión local porque la cookie pertenece al servidor anterior.
+El diálogo acepta `192.168.1.10:3001`, `http://192.168.1.10:3001` o una URL completa. Incluye los atajos **Nube** y **Emulador**, y valida la dirección antes de guardar. Al cambiar de servidor se cierra la sesión local porque la cookie pertenece al servidor anterior.
 
 ### Emulador
 
-Se selecciona automáticamente `http://10.0.2.2:3001/`. Si se guardó otra dirección previamente, abre **Cambiar servidor → Emulador**.
+Abre **Cambiar servidor → Emulador** para usar `http://10.0.2.2:3001/` con el backend local. Para volver a la nube usa **Cambiar servidor → Nube**.
 
 ### Dispositivo físico
 
+Con la dirección por defecto no necesitas nada más: instala el APK y usa la app con internet.
+
+Si prefieres el backend local:
+
 1. Conecta el celular y el computador a la misma red Wi-Fi.
 2. Inicia el backend con `npm run dev`. La consola imprime la IP que debe usar el celular.
-3. La app selecciona automáticamente `http://192.168.80.40:3001/`. Si la IP del equipo es distinta o cambia al conectarte a otra Wi-Fi, abre **Cambiar servidor** y actualízala.
+3. Abre **Cambiar servidor** y escribe la IP del equipo, por ejemplo `http://192.168.1.10:3001`.
 4. Permite el puerto 3001 en el firewall de Windows. En PowerShell como administrador:
 
    ```powershell
@@ -86,7 +104,7 @@ o añadirla a `android/gradle.properties`:
 CAMPUS_API_BASE_URL=http://192.168.1.10:3001/
 ```
 
-La app permite tráfico HTTP local mediante `res/xml/network_security_config.xml`. Para producción usa HTTPS y elimina esa excepción.
+La app permite tráfico HTTP hacia el backend local mediante `res/xml/network_security_config.xml`; la URL en la nube usa HTTPS.
 
 ## Compilar desde la terminal
 
@@ -262,8 +280,9 @@ La barra inferior del administrador incluye **Instituciones, Estudiantes, Evento
 
 | Síntoma | Causa probable |
 | --- | --- |
-| "No pudimos conectar con el servidor" en el emulador | El backend no está encendido o la URL no es `http://10.0.2.2:3001/`. |
-| Funciona en el emulador pero no en el teléfono | El backend escucha en `127.0.0.1` (`HOST=0.0.0.0` lo corrige), la IP es incorrecta o el firewall bloquea el puerto 3001. |
+| "No pudimos conectar con el servidor" con la URL por defecto | El servicio gratuito de Render está despertando; espera cerca de un minuto y reintenta. |
+| "No pudimos conectar con el servidor" en el emulador local | El backend no está encendido o elegiste la URL equivocada; usa **Cambiar servidor → Emulador**. |
+| Funciona en el emulador pero no en el teléfono con backend local | El backend escucha en `127.0.0.1` (`HOST=0.0.0.0` lo corrige), la IP es incorrecta o el firewall bloquea el puerto 3001. |
 | La app vuelve al login | La cookie expiró o el backend se reinició; vuelve a iniciar sesión. |
 | Error 403 al guardar | El token CSRF no está presente; ocurre si se intenta escribir sin una sesión obtenida por login/me. |
 | No aparecen torneos en borrador | El backend solo muestra los borradores al usuario responsable; es el comportamiento existente. |
