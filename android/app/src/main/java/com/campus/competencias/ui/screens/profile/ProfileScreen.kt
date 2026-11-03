@@ -168,8 +168,8 @@ fun ProfileScreen(
                 }
                 Spacer(Modifier.height(9.dp))
                 Text(
-                    text = "En el emulador, 10.0.2.2 apunta al equipo donde corre el backend. " +
-                        "En un dispositivo físico usa la IP de tu red local.",
+                    text = "Por defecto se usa la API en la nube. En el emulador, 10.0.2.2 apunta al " +
+                        "equipo donde corre el backend local; en un dispositivo físico usa la IP de tu red Wi-Fi.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
