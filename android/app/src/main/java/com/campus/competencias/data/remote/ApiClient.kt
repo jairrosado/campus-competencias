@@ -43,7 +43,7 @@ object ApiClient {
 
         // Retrofit exige una URL al construir; el interceptor la reemplaza en cada
         // solicitud para que el usuario pueda cambiar de servidor sin reiniciar.
-        val seedUrl = baseUrlProvider().toHttpUrlOrNull() ?: ServerSettings.EMULATOR_URL.toHttpUrlOrNull()!!
+        val seedUrl = baseUrlProvider().toHttpUrlOrNull() ?: ServerSettings.CLOUD_URL.toHttpUrlOrNull()!!
 
         return Retrofit.Builder()
             .baseUrl(seedUrl)

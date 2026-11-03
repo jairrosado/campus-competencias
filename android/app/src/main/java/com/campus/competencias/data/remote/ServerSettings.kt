@@ -9,16 +9,16 @@
 package com.campus.competencias.data.remote
 
 import android.content.Context
-import android.os.Build
 import com.campus.competencias.BuildConfig
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 /**
  * Dirección de la API elegida por el usuario en este dispositivo.
  *
- * El emulador necesita 10.0.2.2 para llegar al equipo donde corre el backend.
- * Un celular físico necesita la IP de red local de ese mismo equipo. Guardar la
- * dirección permite cambiar de escenario sin recompilar la app.
+ * Por defecto se usa la API publicada en Render, así que la app funciona en
+ * cualquier celular o emulador con internet sin encender nada en el equipo.
+ * El emulador (10.0.2.2) y la IP de red local quedan disponibles para
+ * desarrollo. Guardar la dirección permite cambiar de escenario sin recompilar.
  */
 // AN-01 y AN-05 · URL del servidor
 class ServerSettings(context: Context) {
@@ -37,6 +37,8 @@ class ServerSettings(context: Context) {
         }
 
     companion object {
+        /** API + web desplegadas en Render: funciona desde cualquier red. */
+        const val CLOUD_URL = "https://campus-competencias-api.onrender.com/"
         const val EMULATOR_URL = "http://10.0.2.2:3001/"
         const val DEVICE_URL = "http://192.168.80.40:3001/"
 
@@ -44,15 +46,11 @@ class ServerSettings(context: Context) {
         private const val KEY_BASE_URL = "base_url"
         private val SCHEME_PATTERN = Regex("^https?://", RegexOption.IGNORE_CASE)
 
-        /** El emulador Android ve el host como 10.0.2.2; un teléfono usa la IP Wi-Fi del host. */
-        fun defaultBaseUrl(): String = if (isAndroidEmulator()) EMULATOR_URL else DEVICE_URL
-
-        private fun isAndroidEmulator(): Boolean =
-            Build.FINGERPRINT.startsWith("generic") ||
-                Build.FINGERPRINT.startsWith("unknown") ||
-                Build.MODEL.contains("Emulator", ignoreCase = true) ||
-                Build.MODEL.contains("Android SDK built for", ignoreCase = true) ||
-                Build.HARDWARE in setOf("goldfish", "ranchu", "vbox86")
+        /**
+         * Sin configuración previa se usa la nube. El emulador y la IP local
+         * siguen disponibles desde el diálogo de servidor para desarrollo.
+         */
+        fun defaultBaseUrl(): String = CLOUD_URL
 
         /**
          * Acepta "192.168.1.10:3001", "http://192.168.1.10:3001" o una URL completa.
