@@ -1,17 +1,26 @@
 # Campus: gestión de competencias
 
-## Desplegar la API en Render
+## Desplegar la API y la web en Render
 
-El archivo `render.yaml` configura el servicio web de la API. Antes de desplegar, crea una base de datos MongoDB accesible desde internet (por ejemplo, en MongoDB Atlas) y permite las conexiones desde Render en la lista de acceso de red del proveedor. No uses la URI local `127.0.0.1` en producción.
+El archivo `render.yaml` configura un único servicio web que compila la web con Vite y la sirve junto con la API. Así la plataforma completa funciona con una sola URL, sin depender de un `node` encendido en tu equipo y sin problemas de cookies entre dominios. Antes de desplegar, crea una base de datos MongoDB accesible desde internet (por ejemplo, en MongoDB Atlas) y permite las conexiones desde Render en la lista de acceso de red del proveedor. No uses la URI local `127.0.0.1` en producción.
 
 En Render, crea un **Blueprint** conectado a este repositorio y confirma el servicio `campus-competencias-api`. Cuando Render lo solicite, configura:
 
 - `MONGODB_URI`: URI de conexión de producción, incluida la base de datos `torneos_universidad`.
-- `CLIENT_ORIGIN`: origen exacto del frontend desplegado, por ejemplo `https://campus.example.com`, sin ruta final. Si aún no tienes frontend, puedes colocar temporalmente `https://example.com`.
+- `CLIENT_ORIGIN`: solo es necesario si la web se aloja en otro dominio. En ese caso usa el origen exacto, por ejemplo `https://campus.example.com`, sin ruta final. Si el mismo servicio sirve la web, puede quedar con el valor temporal `https://example.com`.
 
-Render instalará las dependencias, ejecutará `npm run start --workspace backend` y comprobará `/api/health`. `PORT` lo asigna Render automáticamente. Para verificar el servicio, abre `https://<nombre-del-servicio>.onrender.com/api/health`; debe responder con `status: "ok"` y `database: true`.
+Render ejecutará `npm ci --include=dev && npm run build` (instala dependencias, compila la web en `frontend/dist`) y luego `npm run start --workspace backend`. `PORT` lo asigna Render automáticamente y el backend escucha en `0.0.0.0`.
 
-La configuración de producción desactiva la creación pública de la cuenta inicial de administrador. Para crearla después del despliegue, activa `ALLOW_INITIAL_SETUP=true` temporalmente en las variables del servicio, reinícialo, crea la cuenta desde la aplicación y vuelve a desactivarla. Mantén `MONGODB_URI` como variable secreta y usa una contraseña fuerte para esa cuenta. Si el frontend está en otro dominio, la sesión con cookie puede requerir alojar ambos bajo el mismo dominio raíz para que el navegador acepte la cookie `SameSite=Lax`.
+Para verificar el servicio:
+
+- `https://<nombre-del-servicio>.onrender.com/` abre la plataforma web.
+- `https://<nombre-del-servicio>.onrender.com/api/health` debe responder `status: "ok"` y `database: true`.
+
+Si el servicio ya existía y solo mostraba la API, actualiza en **Settings → Build & Deploy** el *Build Command* a `npm ci --include=dev && npm run build` y el *Start Command* a `npm run start --workspace backend`, guarda y vuelve a desplegar. Si Render no encuentra `frontend/dist`, la raíz responderá con un JSON que indica que la web no está compilada.
+
+El plan gratuito de Render suspende el servicio tras unos minutos sin tráfico; la primera visita después de eso puede tardar cerca de un minuto mientras vuelve a arrancar.
+
+La configuración de producción desactiva la creación pública de la cuenta inicial de administrador. Para crearla después del despliegue, activa `ALLOW_INITIAL_SETUP=true` temporalmente en las variables del servicio, reinícialo, crea la cuenta desde la aplicación y vuelve a desactivarla. Mantén `MONGODB_URI` como variable secreta y usa una contraseña fuerte para esa cuenta.
 
 Plataforma de torneos, intercolegiados y hackatones. API REST con Node.js, Express y Mongoose sobre MongoDB; interfaz React con Vite, HTML y CSS.
 

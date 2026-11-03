@@ -3,7 +3,7 @@ services:
     name: campus-competencias-api
     runtime: node
     plan: free
-    buildCommand: npm ci --omit=dev
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm run start --workspace backend
     healthCheckPath: /api/health
     envVars:
