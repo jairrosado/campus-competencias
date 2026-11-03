@@ -22,6 +22,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Cloud
 import androidx.compose.material.icons.rounded.Dns
 import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material.icons.rounded.Wifi
@@ -86,7 +87,7 @@ fun ServerSettingsDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
             ) {
                 Text(
-                    text = "Escribe la dirección donde corre el backend. Puedes cambiarla cuando uses el emulador o un celular.",
+                    text = "La app usa por defecto la API en la nube. También puedes escribir la dirección de un backend local para desarrollo.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -99,7 +100,7 @@ fun ServerSettingsDialog(
                     },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Dirección del servidor") },
-                    placeholder = { Text("http://192.168.1.10:3001") },
+                    placeholder = { Text(ServerSettings.CLOUD_URL) },
                     singleLine = true,
                     isError = error != null,
                     shape = RoundedCornerShape(13.dp),
@@ -136,6 +137,20 @@ fun ServerSettingsDialog(
                 ) {
                     AssistChip(
                         onClick = {
+                            value = ServerSettings.CLOUD_URL
+                            error = null
+                        },
+                        label = { Text("Nube") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Rounded.Cloud,
+                                contentDescription = null,
+                                modifier = Modifier.size(17.dp),
+                            )
+                        },
+                    )
+                    AssistChip(
+                        onClick = {
                             value = ServerSettings.EMULATOR_URL
                             error = null
                         },
@@ -151,6 +166,11 @@ fun ServerSettingsDialog(
                 }
                 Spacer(Modifier.height(14.dp))
                 HintLine(
+                    icon = Icons.Rounded.Cloud,
+                    text = "Nube: ${ServerSettings.CLOUD_URL}",
+                )
+                Spacer(Modifier.height(7.dp))
+                HintLine(
                     icon = Icons.Rounded.PhoneAndroid,
                     text = "Emulador: ${ServerSettings.EMULATOR_URL}",
                 )
@@ -161,7 +181,7 @@ fun ServerSettingsDialog(
                 )
                 Spacer(Modifier.height(7.dp))
                 Text(
-                    text = "El computador y el celular deben estar en la misma red Wi-Fi, y el backend debe escuchar en 0.0.0.0.",
+                    text = "Las direcciones locales solo funcionan si el celular y el computador están en la misma red Wi-Fi y el backend escucha en 0.0.0.0. La nube funciona desde cualquier red.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
