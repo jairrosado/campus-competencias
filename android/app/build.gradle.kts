@@ -4,8 +4,8 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-// La URL por defecto se detecta en tiempo de ejecución según emulador/dispositivo.
-// Estas opciones permiten apuntar a un backend específico para desarrollo/CI.
+// La URL por defecto es la API desplegada en Render (ver ServerSettings.CLOUD_URL).
+// Estas opciones permiten apuntar a otro backend para desarrollo/CI.
 val campusApiBaseUrl = providers.gradleProperty("CAMPUS_API_BASE_URL")
     .orElse(providers.gradleProperty("VITE_API_URL"))
     .orElse(providers.environmentVariable("CAMPUS_API_BASE_URL"))
