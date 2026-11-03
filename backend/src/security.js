@@ -32,7 +32,13 @@ function tokenHash(token) {
 }
 
 export function cookieOptions(config) {
-  return { httpOnly: true, secure: config.production, sameSite: 'lax', path: '/' };
+  if (config.production) {
+    // Detrás de un proxy HTTPS (Render) las cookies deben ser Secure y SameSite=Lax
+    // para funcionar en el mismo origen. Con trust proxy Express sabe que la
+    // conexión es segura.
+    return { httpOnly: true, secure: true, sameSite: 'lax', path: '/' };
+  }
+  return { httpOnly: true, secure: false, sameSite: 'lax', path: '/' };
 }
 
 export function readCookie(req) {
