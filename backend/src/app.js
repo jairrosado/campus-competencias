@@ -9,6 +9,9 @@
  */
 import express from 'express';
 import mongoose from 'mongoose';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { User, Institution, publicUser, publicInstitution, states } from './models.js';
 import { ApiError, credentials, institutionInput, escapedSearch, formFields } from './validation.js';
 import { COOKIE, authLimiter, cookieOptions, createSession, hashPassword, verifyPassword, requireSession, requireAdmin, requireCsrf } from './security.js';
@@ -16,6 +19,20 @@ import { usersRouter } from './users.js';
 import { competitionRouter } from './competition-routes.js';
 import { Participant, Team, Registration } from './competition-models.js';
 import { competitionWrite, refreshActor, requireRoles } from './competition-service.js';
+
+// La web compilada con Vite queda en frontend/dist y se sirve desde la misma API.
+// Así un único servicio (Render) atiende HTML, assets y /api sin problemas de cookies.
+const frontendDist = fileURLToPath(new URL('../../frontend/dist', import.meta.url));
+const frontendIndex = join(frontendDist, 'index.html');
+
+function sameOrigin(req, origin) {
+  if (!origin) return false;
+  try {
+    return new URL(origin).host === req.get('host');
+  } catch {
+    return false;
+  }
+}
 
 const institutionFields = ['nombre', 'ciudad', 'departamento', 'tipo', 'estado'];
 function institutionId(value) {
@@ -43,7 +60,10 @@ export function createApp(config) {
     res.set('X-Content-Type-Options', 'nosniff');
     res.set('Cache-Control', 'no-store');
     const origin = req.get('origin');
-    if (origin && origin === config.clientOrigin) {
+    // Se acepta el origen configurado y también el propio origen del servicio.
+    // Esto último es clave cuando la API sirve la web compilada en el mismo dominio.
+    const allowed = origin && (origin === config.clientOrigin || sameOrigin(req, origin));
+    if (allowed) {
       res.set('Access-Control-Allow-Origin', origin);
       res.set('Access-Control-Allow-Credentials', 'true');
       res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
@@ -51,7 +71,7 @@ export function createApp(config) {
       res.vary('Origin');
       if (req.method === 'OPTIONS') return res.sendStatus(204);
     }
-    if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && origin && origin !== config.clientOrigin) {
+    if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && origin && !allowed) {
       throw new ApiError(403, 'El origen de la solicitud no está autorizado.', 'ORIGIN');
     }
     next();
@@ -184,6 +204,19 @@ export function createApp(config) {
   });
 
   app.use('/api', competitionRouter(authenticated));
+
+  // HU-01 · Web compilada en el mismo servicio (producción).
+  if (existsSync(frontendIndex)) {
+    app.use(express.static(frontendDist, { index: false }));
+    app.use((req, res, next) => {
+      if (!['GET', 'HEAD'].includes(req.method) || req.path.startsWith('/api')) return next();
+      res.sendFile(frontendIndex);
+    });
+  } else {
+    app.get('/', (req, res) => res.json({
+      data: { status: 'ok', message: 'API en línea. La web no está compilada (falta frontend/dist).' },
+    }));
+  }
 
   app.use((req, res) => res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Recurso no encontrado.' } }));
   app.use((error, req, res, next) => {
