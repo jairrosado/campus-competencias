@@ -1,3 +1,14 @@
+/**
+ * Archivo: backend/src/validation.js
+ * Propósito: Validaciones y normalizaciones compartidas: credenciales, cuentas, paginación e instituciones.
+ *
+ * Historias de usuario:
+ * - HU-01 · Acceso, configuración inicial y sesión segura
+ * - HU-02 · Gestión de cuentas de usuario
+ * - HU-03 · Consulta y edición del perfil propio
+ * - HU-04 · Registro y consulta de instituciones
+ * - HU-05 · Edición, eliminación y desactivación de instituciones
+ */
 import { institutionTypes, roles, states } from './models.js';
 
 export class ApiError extends Error {
@@ -14,6 +25,7 @@ export function text(value, field, max, min = 1) {
   return value.trim();
 }
 
+// HU-01 · Credenciales de login y setup
 export function credentials(body, setup = false) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) throw new ApiError(400, 'Envía los datos del formulario.');
   const correo = emailAddress(body.correo);
@@ -37,6 +49,7 @@ export function formFields(body, allowed) {
   return body;
 }
 
+// HU-02 · Validación de cuentas
 export function accountInput(body, creating = false) {
   formFields(body, ['nombre', 'correo', 'rol', 'estado', 'password']);
   const data = { nombre: text(body.nombre, 'nombre', 100, 2), correo: emailAddress(body.correo), rol: body.rol, estado: body.estado };
@@ -68,6 +81,7 @@ export function normalize(value) {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
+// HU-04 y HU-05 · Validación de institución
 export function institutionInput(body) {
   const data = {
     nombre: text(body?.nombre, 'nombre', 150, 2),

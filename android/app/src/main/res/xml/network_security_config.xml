@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    La API local del proyecto usa HTTP en el puerto 3001.
+    En producción cambia CAMPUS_API_BASE_URL a HTTPS y elimina esta excepción.
+    10.0.2.2 es el host de desarrollo visto desde el emulador de Android.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

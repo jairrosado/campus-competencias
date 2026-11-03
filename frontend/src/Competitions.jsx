@@ -1,3 +1,17 @@
+/**
+ * Archivo: frontend/src/Competitions.jsx
+ * Propósito: Panel genérico de competencias: formularios, detalle y acciones por disciplina, evento, participante, equipo e inscripción.
+ *
+ * Historias de usuario:
+ * - HU-06 · Gestión de disciplinas deportivas
+ * - HU-07 · Creación y consulta de torneos
+ * - HU-08 · Reglamento deportivo y apertura de inscripciones
+ * - HU-09 · Configuración de hackatones
+ * - HU-10 · Registro de participantes
+ * - HU-11 · Gestión de equipos deportivos y tecnológicos
+ * - HU-12 · Catálogo de apoyo y navegación por rol
+ * - HU-13 · Inscripción deportiva validada
+ */
 import { useEffect, useRef, useState } from 'react';
 import { AlertCircle, Check, ChevronLeft, ChevronRight, Eye, LoaderCircle, Pencil, Plus, RefreshCw, Search, Trophy, X } from 'lucide-react';
 import { api } from './api.js';
@@ -23,6 +37,7 @@ function localDate(value) { if (!value) return ''; const d = new Date(value); re
 const readableDate = value => value ? new Date(value).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' }) : 'Sin fecha';
 const nameOf = (list, id) => list.find(item => item.id === id)?.nombre || 'Registro no disponible';
 function eventStatus(item) { if (item.estado !== 'inscripciones') return labels[item.estado]; const now = Date.now(); return now < Date.parse(item.inscripcionInicio) ? 'Inscripciones próximas' : now > Date.parse(item.inscripcionFin) ? 'Inscripciones cerradas' : 'Inscripciones abiertas'; }
+// HU-12 · Permisos de edición por rol
 function canEdit(type, item, user) { if (user.rol === 'administrador') return true; if (['torneos', 'hackatones'].includes(type)) return user.rol === 'organizador' && item.responsable === user.id; if (type === 'participantes') return user.rol === 'organizador' && item.creadoPor === user.id; if (type === 'equipos') return item.responsable === user.id || user.rol === 'organizador' && item.creadoPor === user.id; return false; }
 function canCreate(type, user) { if (['disciplinas', 'hackatones'].includes(type)) return user.rol === 'administrador'; if (['torneos', 'participantes'].includes(type)) return ['administrador', 'organizador'].includes(user.rol); return ['administrador', 'organizador', 'participante'].includes(user.rol); }
 function initial(type, item, user) {
@@ -49,6 +64,7 @@ function Select({ label, value, onChange, options, required = true, ...props }) 
 function TextArea({ label, value, onChange, required = false, ...props }) { return <label>{label}<textarea value={value || ''} onChange={event => onChange(event.target.value)} required={required} rows={3} maxLength={2000} {...props} /></label>; }
 function Checks({ label, values, options, onChange }) { return <fieldset className="choice-field"><legend>{label}</legend><div className="choice-options">{options.map(option => <label key={option}><input type="checkbox" checked={values.includes(option)} onChange={event => onChange(event.target.checked ? [...values, option] : values.filter(value => value !== option))} />{labels[option]}</label>)}</div></fieldset>; }
 
+// HU-06 a HU-11 · Formularios de competencia
 function ResourceForm({ type, item, catalogs, user, onClose, onSaved, onLogout }) {
   const dialog = useRef(null);
   const [form, setForm] = useState(() => initial(type, item, user));
@@ -156,6 +172,7 @@ function ResourceForm({ type, item, catalogs, user, onClose, onSaved, onLogout }
   </dialog>;
 }
 
+// HU-07 a HU-09 · Detalle de eventos y reglamento
 function ResourceDetail({ type, item, catalogs, onClose }) {
   const ref = useRef(null); useEffect(() => { ref.current.showModal(); }, []);
   const row = (title, value) => <div><dt>{title}</dt><dd>{value ?? '—'}</dd></div>;
@@ -177,6 +194,7 @@ function ResourceDetail({ type, item, catalogs, onClose }) {
   </dl>{rules && <section className="rules-detail"><h3>Reglamento · versión {item.reglamentoVersion}</h3><dl className="resource-details">{row('Modalidad y formato', `${labels[item.unidadInscripcion]} · ${labels[item.formato]}`)}{row('Elegibilidad', `Edad: ${rules.edadMin ?? 'sin mínimo'} a ${rules.edadMax ?? 'sin máximo'} · ${labels[rules.genero]}`)}{row('Plantilla', `${rules.integrantesMin} a ${rules.integrantesMax} integrantes`)}{row('Inscripciones por competidor', rules.maxInscripciones)}{row('Resultado', `${labels[rules.metrica]} · ${rules.unidad} · ${rules.precision} decimales`)}{row('Orden', labels[rules.orden])}{row('Fases', rules.fases.join(' → '))}{row('Avance', rules.avance)}{row('Desempates', rules.desempates.join(' → '))}{row('Pruebas', rules.pruebas.join(', ') || 'Competencia general')}{row('Requisitos', rules.requisitos || 'Sin requisitos adicionales')}{row('Participación en varios equipos', rules.permiteMultiplesEquipos ? 'Permitida' : 'Un solo equipo por torneo')}</dl></section>}<div className="dialog-actions"><button className="button button-secondary" onClick={onClose}>Cerrar detalle</button></div></dialog>;
 }
 
+// HU-06 a HU-13 · Panel de recursos e inscripciones
 export function ResourcePanel({ type, user, onLogout }) {
   const [data, setData] = useState(empty), [catalogs, setCatalogs] = useState(catalogsEmpty);
   const [query, setQuery] = useState(''), [debounced, setDebounced] = useState(''), [filters, setFilters] = useState({}), [page, setPage] = useState(1), [refresh, setRefresh] = useState(0);

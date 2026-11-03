@@ -1,3 +1,10 @@
+/**
+ * Archivo: backend/src/security.js
+ * Propósito: Hashing de contraseñas, sesiones con cookie HttpOnly, CSRF, roles y límite de intentos de acceso.
+ *
+ * Historias de usuario:
+ * - HU-01 · Acceso, configuración inicial y sesión segura
+ */
 import { randomBytes, createHash, scrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { Session, User, publicUser } from './models.js';
@@ -37,6 +44,7 @@ export function readCookie(req) {
   } catch { return null; }
 }
 
+// HU-01 · Crea la sesión y entrega cookie + CSRF
 export async function createSession(res, user, config) {
   const token = randomBytes(32).toString('base64url');
   const csrfToken = randomBytes(32).toString('base64url');
@@ -46,6 +54,7 @@ export async function createSession(res, user, config) {
   return { user: publicUser(user), csrfToken };
 }
 
+// HU-01 · Valida la cookie campus_session
 export function requireSession(config) {
   return async (req, res, next) => {
     const token = readCookie(req);
@@ -68,6 +77,7 @@ export function requireAdmin(req, res, next) {
   next();
 }
 
+// HU-01 · Exige X-CSRF-Token en escrituras
 export function requireCsrf(req, res, next) {
   const supplied = Buffer.from(req.get('x-csrf-token') || '');
   const expected = Buffer.from(req.session.csrfToken);

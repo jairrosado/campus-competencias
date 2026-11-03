@@ -1,3 +1,12 @@
+/**
+ * Archivo: backend/src/models.js
+ * Propósito: Modelos Mongoose de usuarios, sesiones e instituciones, y sus proyecciones públicas.
+ *
+ * Historias de usuario:
+ * - HU-01 · Acceso, configuración inicial y sesión segura
+ * - HU-02 · Gestión de cuentas de usuario
+ * - HU-04 · Registro y consulta de instituciones
+ */
 import mongoose from 'mongoose';
 import { competitionModels } from './competition-models.js';
 
@@ -6,6 +15,7 @@ export const roles = ['administrador', 'organizador', 'participante', 'jurado'];
 export const institutionTypes = ['colegio', 'universidad', 'instituto', 'otro'];
 export const states = ['activo', 'inactivo'];
 
+// HU-01 y HU-02 · Cuentas y roles
 const userSchema = new Schema({
   nombre: { type: String, required: true, trim: true, maxlength: 100 },
   correo: { type: String, required: true, lowercase: true, trim: true, maxlength: 254, unique: true },
@@ -20,6 +30,7 @@ userSchema.index({ bootstrapAdmin: 1 }, {
   unique: true, partialFilterExpression: { bootstrapAdmin: true },
 });
 
+// HU-01 · Sesiones con expiración
 const sessionSchema = new Schema({
   tokenHash: { type: String, required: true, unique: true },
   usuario: { type: Schema.Types.ObjectId, ref: 'Usuario', required: true },
@@ -28,6 +39,7 @@ const sessionSchema = new Schema({
   expiresAt: { type: Date, required: true, index: { expires: 0 } },
 }, { timestamps: true, collection: 'sesiones', bufferCommands: false });
 
+// HU-04 · Modelo de institución
 const institutionSchema = new Schema({
   nombre: { type: String, required: true, trim: true, maxlength: 150 },
   ciudad: { type: String, required: true, trim: true, maxlength: 100 },

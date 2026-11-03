@@ -1,3 +1,13 @@
+/**
+ * Archivo: frontend/src/App.jsx
+ * Propósito: Composición principal de la web: login/setup, espacio de trabajo e instituciones.
+ *
+ * Historias de usuario:
+ * - HU-01 · Acceso, configuración inicial y sesión segura
+ * - HU-04 · Registro y consulta de instituciones
+ * - HU-05 · Edición, eliminación y desactivación de instituciones
+ * - HU-12 · Catálogo de apoyo y navegación por rol
+ */
 import { useEffect, useRef, useState } from 'react';
 import {
   AlertCircle, ArrowRight, Building2, Check, ChevronLeft, ChevronRight,
@@ -28,6 +38,7 @@ function ErrorNotice({ children }) {
   return children && <div className="error-notice" role="alert"><AlertCircle size={18} /><span>{children}</span></div>;
 }
 
+// HU-01 · Login y configuración inicial
 function Auth({ setup, onAuthenticated }) {
   const [form, setForm] = useState({ nombre: '', correo: '', password: '', confirm: '' });
   const [busy, setBusy] = useState(false);
@@ -80,6 +91,7 @@ function Auth({ setup, onAuthenticated }) {
   </main>;
 }
 
+// HU-04 · Alta y edición de instituciones
 function InstitutionDialog({ institution, onClose, onSaved }) {
   const dialog = useRef(null);
   const [form, setForm] = useState(institution || blankInstitution);
@@ -121,6 +133,7 @@ function InstitutionDialog({ institution, onClose, onSaved }) {
   </dialog>;
 }
 
+// HU-05 · Desactivación y borrado
 function InstitutionDeleteDialog({ institution, onClose, onSaved, onLogout }) {
   const dialog = useRef(null);
   const cancel = useRef(null);
@@ -159,6 +172,7 @@ function InstitutionDeleteDialog({ institution, onClose, onSaved, onLogout }) {
   </dialog>;
 }
 
+// HU-12 · Navegación por rol
 function Workspace({ user, onLogout, onUserChanged }) {
   const [view, setView] = useState('instituciones');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -255,6 +269,7 @@ function Workspace({ user, onLogout, onUserChanged }) {
   </div>;
 }
 
+// HU-01 · Arranque, sesión y cambio de panel
 export default function App() {
   const [session, setSession] = useState(null);
   const [setup, setSetup] = useState(false);

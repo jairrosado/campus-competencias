@@ -1,3 +1,17 @@
+/**
+ * Archivo: backend/src/competition-routes.js
+ * Propósito: Rutas de competencias: catálogos, CRUD por recurso, transición de estado e inscripciones.
+ *
+ * Historias de usuario:
+ * - HU-06 · Gestión de disciplinas deportivas
+ * - HU-07 · Creación y consulta de torneos
+ * - HU-08 · Reglamento deportivo y apertura de inscripciones
+ * - HU-09 · Configuración de hackatones
+ * - HU-10 · Registro de participantes
+ * - HU-11 · Gestión de equipos deportivos y tecnológicos
+ * - HU-12 · Catálogo de apoyo y navegación por rol
+ * - HU-13 · Inscripción deportiva validada
+ */
 import { Router } from 'express';
 import { User, Institution } from './models.js';
 import { Discipline, Tournament, Hackathon, Participant, Team, Registration, resourceJSON, sportsStates, hackathonStates } from './competition-models.js';
@@ -76,6 +90,7 @@ export function competitionRouter(authenticated) {
   const router = Router();
   router.use(authenticated);
 
+  // HU-12 · Catálogo de apoyo para formularios
   router.get('/catalogos', async (req, res) => {
     const management = ['administrador', 'organizador'].includes(req.user.rol);
     const [instituciones, disciplinas, usuarios, participantes, equipos, hackatones, torneos] = await Promise.all([
@@ -91,6 +106,7 @@ export function competitionRouter(authenticated) {
   });
 
   for (const [type, Model] of Object.entries(models)) {
+    // HU-06 a HU-11 · Listado por tipo de recurso
     router.get(`/${type}`, async (req, res) => {
       const base = await scope(type, req.user);
       const filters = [];
@@ -120,12 +136,14 @@ export function competitionRouter(authenticated) {
       res.json({ data: { items: await Promise.all(items.map(item => enriched(type, item))), total, page, pages: Math.max(1, Math.ceil(total / limit)), summary: { total: all, active } } });
     });
 
+    // HU-06 a HU-11 · Detalle por id
     router.get(`/${type}/:id`, async (req, res) => {
       const record = await Model.findOne({ $and: [{ _id: id(req.params.id) }, await scope(type, req.user)] });
       if (!record) throw new ApiError(404, 'Registro no encontrado o no autorizado.', 'NOT_FOUND');
       res.json({ data: await enriched(type, record) });
     });
 
+    // HU-06 a HU-11 · Creación por tipo
     router.post(`/${type}`, requireCsrf, async (req, res) => {
       mayCreate(type, req.user);
       const record = await competitionWrite(async () => {
@@ -137,6 +155,7 @@ export function competitionRouter(authenticated) {
       res.status(201).json({ data: await enriched(type, record) });
     });
 
+    // HU-06 a HU-11 · Edición por tipo
     router.patch(`/${type}/:id`, requireCsrf, async (req, res) => {
       const record = await competitionWrite(async () => {
         await refreshActor(req);
@@ -155,6 +174,7 @@ export function competitionRouter(authenticated) {
   }
 
   for (const [type, Model] of [['torneos', Tournament], ['hackatones', Hackathon]]) {
+    // HU-08 · Apertura de inscripciones
     router.patch(`/${type}/:id/estado`, requireCsrf, async (req, res) => {
       formFields(req.body, ['estado']);
       const record = await competitionWrite(async () => {
@@ -173,6 +193,7 @@ export function competitionRouter(authenticated) {
     });
   }
 
+  // HU-13 · Consulta de inscripciones
   router.get('/inscripciones', async (req, res) => {
     const base = await scope('inscripciones', req.user);
     const filter = { $and: [base, ...(req.query.torneo ? [{ torneo: id(req.query.torneo, 'torneo') }] : [])] };
@@ -187,6 +208,7 @@ export function competitionRouter(authenticated) {
     }));
     res.json({ data: { items: result, total, page, pages: Math.max(1, Math.ceil(total / limit)), summary: { total, active: total } } });
   });
+  // HU-13 · Inscripción validada
   router.post('/inscripciones', requireCsrf, async (req, res) => {
     const record = await competitionWrite(async () => { await refreshActor(req); return registerCompetitor(req.body, req.user); });
     res.status(201).json({ data: resourceJSON(record) });

@@ -1,5 +1,18 @@
 # Campus: gestión de competencias
 
+## Desplegar la API en Render
+
+El archivo `render.yaml` configura el servicio web de la API. Antes de desplegar, crea una base de datos MongoDB accesible desde internet (por ejemplo, en MongoDB Atlas) y permite las conexiones desde Render en la lista de acceso de red del proveedor. No uses la URI local `127.0.0.1` en producción.
+
+En Render, crea un **Blueprint** conectado a este repositorio y confirma el servicio `campus-competencias-api`. Cuando Render lo solicite, configura:
+
+- `MONGODB_URI`: URI de conexión de producción, incluida la base de datos `torneos_universidad`.
+- `CLIENT_ORIGIN`: origen exacto del frontend desplegado, por ejemplo `https://campus.example.com`, sin ruta final. Si aún no tienes frontend, puedes colocar temporalmente `https://example.com`.
+
+Render instalará las dependencias, ejecutará `npm run start --workspace backend` y comprobará `/api/health`. `PORT` lo asigna Render automáticamente. Para verificar el servicio, abre `https://<nombre-del-servicio>.onrender.com/api/health`; debe responder con `status: "ok"` y `database: true`.
+
+La configuración de producción desactiva la creación pública de la cuenta inicial de administrador. Para crearla después del despliegue, activa `ALLOW_INITIAL_SETUP=true` temporalmente en las variables del servicio, reinícialo, crea la cuenta desde la aplicación y vuelve a desactivarla. Mantén `MONGODB_URI` como variable secreta y usa una contraseña fuerte para esa cuenta. Si el frontend está en otro dominio, la sesión con cookie puede requerir alojar ambos bajo el mismo dominio raíz para que el navegador acepte la cookie `SameSite=Lax`.
+
 Plataforma de torneos, intercolegiados y hackatones. API REST con Node.js, Express y Mongoose sobre MongoDB; interfaz React con Vite, HTML y CSS.
 
 ## Requisitos
@@ -33,7 +46,7 @@ Abre [la plataforma local](http://127.0.0.1:5173). La API usa el puerto 3001 y l
 
 ## Alcance actual
 
-Acceso, cuentas, perfil, instituciones, disciplinas, torneos, configuración de hackatones, reglamentos, participantes, equipos, catálogo e inscripciones deportivas. Corresponde a 12 historias implementadas de la matriz vigente.
+Acceso, cuentas, perfil, instituciones, disciplinas, torneos, configuración de hackatones, reglamentos, participantes, equipos, catálogo e inscripciones deportivas. Corresponde a 13 historias implementadas de la matriz vigente.
 
 Escenarios, demás etapas, inscripción a hackatones, agenda, resultados, proyectos y evaluación están pendientes. La entrega actual se ejecuta localmente con una instancia de API; los cupos concurrentes requieren coordinación compartida si se despliega con varias instancias.
 
@@ -45,10 +58,14 @@ Escenarios, demás etapas, inscripción a hackatones, agenda, resultados, proyec
 | `backend/tests` | Pruebas de integración con bases temporales. |
 | `frontend/src` | Pantallas, formularios, solicitudes a la API y estilos. |
 | `frontend/index.html` y `frontend/vite.config.js` | Entrada web y configuración de desarrollo. |
+| `android/` | Aplicación nativa Android con Kotlin y Jetpack Compose que consume la misma API. |
+| `thunder/` | Colección de Thunder Client con todos los endpoints, entorno local y guía de uso. |
 | `package.json` y `package-lock.json` | Comandos y versiones de las dependencias. |
 | `documentacion` | Material académico local, excluido de Git. |
 
 Para la base de datos, empieza por [los modelos](backend/src/models.js) y [los modelos de competencias](backend/src/competition-models.js). La conexión está en [server.js](backend/src/server.js).
+
+El código del backend, la web y Android lleva comentarios de trazabilidad: cada archivo indica qué historias de usuario implementa y los bloques clave llevan `// HU-XX`.
 
 ## Comprobar
 
@@ -58,6 +75,43 @@ npm run build
 ```
 
 Las pruebas requieren MongoDB y crean bases temporales separadas de la aplicación. La compilación genera `frontend/dist`.
+
+## Probar la API con Thunder Client
+
+La carpeta `thunder/` incluye una colección con las 44 solicitudes de la API y un entorno local. Importa `thunder/campus-competencias.postman_collection.json` desde **Collections → Import** y `thunder/campus-competencias.env` desde **Env → Import**. Ajusta `baseUrl`, `correo` y `password`, ejecuta **Login** y copia `data.csrfToken` en la variable `csrfToken` antes de las escrituras.
+
+El flujo completo, la tabla de variables, los roles por endpoint y los errores frecuentes están en [thunder/README.md](thunder/README.md).
+
+## Aplicación Android
+
+La carpeta `android/` contiene una app nativa en Kotlin con Jetpack Compose y Material 3. Consume la misma API sin modificar endpoints, modelos ni estructura del JSON: incluye inicio de sesión y configuración inicial, instituciones (listar, crear, editar, eliminar o desactivar), cuentas de estudiante, torneos, hackatones, disciplinas, participantes, equipos, inscripciones y perfil, con formularios de alta y edición para el administrador.
+
+Abre `android/` en Android Studio con el backend encendido, o compila desde la terminal:
+
+```powershell
+cd android
+.\gradlew.bat :app:assembleDebug
+```
+
+El backend escucha en `0.0.0.0` por defecto, así que el mismo servidor atiende al emulador y a un celular conectado a la misma red Wi-Fi. Al arrancar, la consola muestra las direcciones disponibles:
+
+```text
+Equipo:            http://localhost:3001
+Celular (Wi-Fi):   http://192.168.1.10:3001
+Emulador Android:  http://10.0.2.2:3001
+```
+
+La app detecta el entorno en la primera ejecución: emulador Android (`http://10.0.2.2:3001/`) o dispositivo físico (`http://192.168.80.40:3001/`). La dirección puede cambiarse desde **Cambiar servidor** y permanece guardada en el dispositivo. También puede fijarse mediante `CAMPUS_API_BASE_URL` o `VITE_API_URL` en Gradle/variables de entorno. Este modo es para desarrollo local: no expongas la API a redes públicas.
+
+La web centraliza sus solicitudes en `frontend/src/api.js`; en desarrollo, Vite las envía al backend en `http://localhost:3001`. Para usar otra API, configura `VITE_API_URL` en `frontend/.env` (ver `frontend/.env.example`). Si se usa una URL directa desde el navegador, configura `CLIENT_ORIGIN` en `backend/.env` con el origen exacto de la web para habilitar cookies y solicitudes autenticadas.
+
+Si prefieres fijar la URL desde la compilación:
+
+```powershell
+.\gradlew.bat :app:installDebug -PCAMPUS_API_BASE_URL=http://192.168.1.10:3001/
+```
+
+La arquitectura, el mapeo de los DTO, la autenticación con cookie y CSRF, y la solución de problemas están en [android/README.md](android/README.md).
 
 ## CRUD con Mongoose
 

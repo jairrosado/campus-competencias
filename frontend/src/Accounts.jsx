@@ -1,3 +1,11 @@
+/**
+ * Archivo: frontend/src/Accounts.jsx
+ * Propósito: Paneles de cuentas y perfil propio con sus formularios y validaciones.
+ *
+ * Historias de usuario:
+ * - HU-02 · Gestión de cuentas de usuario
+ * - HU-03 · Consulta y edición del perfil propio
+ */
 import { useEffect, useRef, useState } from 'react';
 import { AlertCircle, Check, ChevronLeft, ChevronRight, LoaderCircle, Pencil, Plus, RefreshCw, Search, ShieldCheck, UserRound, Users, X } from 'lucide-react';
 import { api } from './api.js';
@@ -11,6 +19,7 @@ function Notice({ children }) {
   return children && <div className="error-notice" role="alert"><AlertCircle size={18} /><span>{children}</span></div>;
 }
 
+// HU-02 · Formulario de cuentas
 function UserDialog({ account, currentUser, onClose, onSaved, onLogout }) {
   const dialog = useRef(null);
   const [form, setForm] = useState(account ? { ...account, password: '' } : blankUser);
@@ -50,6 +59,7 @@ function UserDialog({ account, currentUser, onClose, onSaved, onLogout }) {
   </dialog>;
 }
 
+// HU-02 · Gestión de cuentas
 export function UsersPanel({ user, onUserChanged, onLogout }) {
   const [data, setData] = useState(emptyUsers);
   const [query, setQuery] = useState('');
@@ -112,6 +122,7 @@ export function UsersPanel({ user, onUserChanged, onLogout }) {
   </>;
 }
 
+// HU-03 · Perfil propio
 export function ProfilePanel({ user, onUserChanged, onLogout }) {
   const [form, setForm] = useState({ nombre: user.nombre, correo: user.correo, currentPassword: '' });
   const [editing, setEditing] = useState(false);

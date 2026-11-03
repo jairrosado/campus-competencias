@@ -1,0 +1,72 @@
+[
+  {
+    "_id": "aa08481c-c8d3-538d-b2ed-540dd22a6e92",
+    "name": "Campus Competencias · Local",
+    "default": true,
+    "sortNum": 10000,
+    "created": "2026-11-01T06:19:17.027Z",
+    "modified": "2026-11-01T06:19:17.027Z",
+    "data": [
+      {
+        "name": "baseUrl",
+        "value": "http://localhost:3001"
+      },
+      {
+        "name": "correo",
+        "value": "admin@campus.edu.co"
+      },
+      {
+        "name": "password",
+        "value": "Campus2026*"
+      },
+      {
+        "name": "csrfToken",
+        "value": ""
+      },
+      {
+        "name": "usuarioId",
+        "value": "000000000000000000000000"
+      },
+      {
+        "name": "organizadorId",
+        "value": "000000000000000000000000"
+      },
+      {
+        "name": "participanteUsuarioId",
+        "value": "000000000000000000000000"
+      },
+      {
+        "name": "institucionId",
+        "value": "000000000000000000000000"
+      },
+      {
+        "name": "disciplinaId",
+        "value": "000000000000000000000000"
+      },
+      {
+        "name": "categoriaId",
+        "value": "000000000000000000000000"
+      },
+      {
+        "name": "torneoId",
+        "value": "000000000000000000000000"
+      },
+      {
+        "name": "hackatonId",
+        "value": "000000000000000000000000"
+      },
+      {
+        "name": "participanteId",
+        "value": "000000000000000000000000"
+      },
+      {
+        "name": "equipoId",
+        "value": "000000000000000000000000"
+      },
+      {
+        "name": "equipoTecnologicoId",
+        "value": "000000000000000000000000"
+      }
+    ]
+  }
+]

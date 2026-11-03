@@ -1,3 +1,16 @@
+/**
+ * Archivo: backend/src/competition-service.js
+ * Propósito: Reglas de negocio de competencias: referencias activas, reglamentos, elegibilidad e inscripción.
+ *
+ * Historias de usuario:
+ * - HU-06 · Gestión de disciplinas deportivas
+ * - HU-07 · Creación y consulta de torneos
+ * - HU-08 · Reglamento deportivo y apertura de inscripciones
+ * - HU-09 · Configuración de hackatones
+ * - HU-10 · Registro de participantes
+ * - HU-11 · Gestión de equipos deportivos y tecnológicos
+ * - HU-13 · Inscripción deportiva validada
+ */
 import mongoose from 'mongoose';
 import { User, Institution } from './models.js';
 import { Discipline, Tournament, Hackathon, Participant, Team, Registration, participationModes, competitionFormats } from './competition-models.js';
@@ -56,6 +69,7 @@ export function readableEvent(user, event) {
 }
 export function ownsRecord(user, record) { return user.rol === 'administrador' || String(record.creadoPor) === String(user._id) || String(record.responsable) === String(user._id); }
 
+// HU-06 · Disciplinas, modalidades, formatos y categorías
 export async function disciplineInput(body, previous) {
   formFields(body, ['nombre', 'modalidades', 'formatos', 'categorias', 'estado']);
   const nombre = text(body.nombre, 'nombre', 100, 2);
@@ -101,6 +115,7 @@ async function eventOwner(body, user, previous) {
   if (user.rol === 'organizador' && String(owner._id) !== String(user._id)) throw new ApiError(403, 'Solo puedes gestionar los eventos asignados a tu cuenta.', 'FORBIDDEN');
   return owner._id;
 }
+// HU-08 · Reglamento deportivo
 function ruleInput(body, category, mode, format) {
   formFields(body, ['integrantesMin', 'integrantesMax', 'maxInscripciones', 'metrica', 'unidad', 'precision', 'orden', 'fases', 'avance', 'desempates', 'pruebas', 'requisitos', 'permiteMultiplesEquipos']);
   const integrantesMin = integer(body.integrantesMin, 'Integrantes mínimos', 1, 100);
@@ -117,6 +132,7 @@ function ruleInput(body, category, mode, format) {
     requisitos: optionalText(body.requisitos, 'requisitos'), permiteMultiplesEquipos: body.permiteMultiplesEquipos || false,
   };
 }
+// HU-07 y HU-08 · Torneos y su reglamento
 export async function tournamentInput(body, user, previous) {
   formFields(body, ['nombre', 'descripcion', 'tipo', 'disciplina', 'categoria', 'unidadInscripcion', 'formato', 'ciudad', 'departamento', 'inicio', 'fin', 'inscripcionInicio', 'inscripcionFin', 'cupos', 'responsable', 'reglamento']);
   const discipline = await reference(Discipline, body.disciplina, 'La disciplina', !previous || String(previous.disciplina) !== body.disciplina);
@@ -137,6 +153,7 @@ export async function tournamentInput(body, user, previous) {
   }
   return result;
 }
+// HU-09 · Configuración de hackatones
 export async function hackathonInput(body, user, previous) {
   formFields(body, ['nombre', 'descripcion', 'ciudad', 'departamento', 'modalidad', 'inicio', 'fin', 'inscripcionInicio', 'inscripcionFin', 'entregaInicio', 'entregaFin', 'evaluacionInicio', 'evaluacionFin', 'cupos', 'integrantesMin', 'integrantesMax', 'proyectosPorEquipo', 'categorias', 'requisitos', 'responsable']);
   const integrantesMin = integer(body.integrantesMin, 'Integrantes mínimos', 1, 100);
@@ -147,6 +164,7 @@ export async function hackathonInput(body, user, previous) {
     categorias: strings(body.categorias, 'categorías'), requisitos: optionalText(body.requisitos, 'requisitos'), responsable: await eventOwner(body, user, previous),
   };
 }
+// HU-10 · Participantes
 export async function participantInput(body, previous) {
   formFields(body, ['documento', 'nombre', 'nacimiento', 'genero', 'usuario', 'institucion', 'categoria', 'estado']);
   if (typeof body.nacimiento !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(body.nacimiento)) throw new ApiError(400, 'Revisa la fecha de nacimiento.');
@@ -176,6 +194,7 @@ async function eligible(participant, rules, date, institution) {
   await reference(Institution, participant.institucion, 'La institución del participante');
   await reference(User, participant.usuario, 'La cuenta del participante');
 }
+// HU-11 · Equipos deportivos y tecnológicos
 export async function teamInput(body, user, previous) {
   formFields(body, ['nombre', 'tipo', 'responsable', 'estado', 'institucion', 'disciplina', 'categoria', 'modalidad', 'hackaton', 'categoriaTecnologica', 'integrantes']);
   const tipo = choice(body.tipo, ['deportivo', 'tecnologico'], 'un tipo de equipo');
@@ -215,6 +234,7 @@ export async function teamInput(body, user, previous) {
   return data;
 }
 
+// HU-13 · Elegibilidad, cupos y duplicados
 export async function registerCompetitor(body, user) {
   formFields(body, ['torneo', 'modalidad', 'competidor', 'prueba']);
   requireRoles(user, ['administrador', 'organizador', 'participante']);

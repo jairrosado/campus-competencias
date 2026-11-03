@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: campus-competencias-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci --omit=dev
+    startCommand: npm run start --workspace backend
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: SESSION_HOURS
+        value: "8"

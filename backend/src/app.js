@@ -1,3 +1,12 @@
+/**
+ * Archivo: backend/src/app.js
+ * Propósito: API HTTP: setup inicial, autenticación, instituciones y montaje de los routers de usuarios y competencias.
+ *
+ * Historias de usuario:
+ * - HU-01 · Acceso, configuración inicial y sesión segura
+ * - HU-04 · Registro y consulta de instituciones
+ * - HU-05 · Edición, eliminación y desactivación de instituciones
+ */
 import express from 'express';
 import mongoose from 'mongoose';
 import { User, Institution, publicUser, publicInstitution, states } from './models.js';
@@ -33,7 +42,16 @@ export function createApp(config) {
   app.use((req, res, next) => {
     res.set('X-Content-Type-Options', 'nosniff');
     res.set('Cache-Control', 'no-store');
-    if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && req.get('origin') && req.get('origin') !== config.clientOrigin) {
+    const origin = req.get('origin');
+    if (origin && origin === config.clientOrigin) {
+      res.set('Access-Control-Allow-Origin', origin);
+      res.set('Access-Control-Allow-Credentials', 'true');
+      res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+      res.set('Access-Control-Allow-Headers', 'Content-Type, X-CSRF-Token');
+      res.vary('Origin');
+      if (req.method === 'OPTIONS') return res.sendStatus(204);
+    }
+    if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && origin && origin !== config.clientOrigin) {
       throw new ApiError(403, 'El origen de la solicitud no está autorizado.', 'ORIGIN');
     }
     next();
@@ -52,6 +70,7 @@ export function createApp(config) {
     res.json({ data: { needsSetup: !exists && config.allowInitialSetup, setupAllowed: config.allowInitialSetup } });
   });
 
+  // HU-01 · Configuración inicial del administrador
   app.post('/api/setup/administrador', limiter, async (req, res) => {
     if (!config.allowInitialSetup) throw new ApiError(404, 'Operación no disponible.', 'NOT_FOUND');
     if (await User.exists({})) throw new ApiError(409, 'La cuenta inicial ya fue creada. Inicia sesión.', 'SETUP_CLOSED');
@@ -64,6 +83,7 @@ export function createApp(config) {
     res.status(201).json({ data: await createSession(res, user, config) });
   });
 
+  // HU-01 · Inicio de sesión
   app.post('/api/auth/login', limiter, async (req, res) => {
     const input = credentials(req.body);
     const user = await User.findOne({ correo: input.correo }).select('+passwordHash +authVersion');
@@ -72,10 +92,12 @@ export function createApp(config) {
     res.json({ data: await createSession(res, user, config) });
   });
 
+  // HU-01 · Sesión vigente y csrfToken
   app.get('/api/auth/me', authenticated, (req, res) => {
     res.json({ data: { user: publicUser(req.user), csrfToken: req.session.csrfToken } });
   });
 
+  // HU-01 · Cierre de sesión
   app.post('/api/auth/logout', authenticated, requireCsrf, async (req, res) => {
     await req.session.deleteOne();
     res.clearCookie(COOKIE, cookieOptions(config));
@@ -84,6 +106,7 @@ export function createApp(config) {
 
   app.use('/api/usuarios', usersRouter(authenticated));
 
+  // HU-04 · Listado, búsqueda y resumen
   app.get('/api/instituciones', authenticated, async (req, res) => {
     const page = Number(req.query.page || 1);
     const limit = Number(req.query.limit || 10);
@@ -105,16 +128,19 @@ export function createApp(config) {
     res.json({ data: { items: items.map(publicInstitution), total, page, pages: Math.max(1, Math.ceil(total / limit)), summary: { total: all, active, cities: cities.length } } });
   });
 
+  // HU-04 · Registro de instituciones
   app.post('/api/instituciones', authenticated, requireAdmin, requireCsrf, async (req, res) => {
     formFields(req.body, institutionFields);
     const institution = await institutionWrite(req, () => Institution.create(institutionInput(req.body)));
     res.status(201).json({ data: publicInstitution(institution) });
   });
 
+  // HU-04 · Consulta de una institución
   app.get('/api/instituciones/:id', authenticated, async (req, res) => {
     res.json({ data: publicInstitution(await institutionRecord(req.params.id)) });
   });
 
+  // HU-05 · Reemplazo completo
   app.put('/api/instituciones/:id', authenticated, requireAdmin, requireCsrf, async (req, res) => {
     formFields(req.body, institutionFields);
     if (institutionFields.some(field => !Object.hasOwn(req.body, field)) || !states.includes(req.body.estado)) {
@@ -129,6 +155,7 @@ export function createApp(config) {
     res.json({ data: publicInstitution(institution) });
   });
 
+  // HU-05 · Edición parcial
   app.patch('/api/instituciones/:id', authenticated, requireAdmin, requireCsrf, async (req, res) => {
     formFields(req.body, institutionFields);
     const institution = await institutionWrite(req, async () => {
@@ -139,6 +166,7 @@ export function createApp(config) {
     res.json({ data: publicInstitution(institution) });
   });
 
+  // HU-05 · Borrado con protección de referencias
   app.delete('/api/instituciones/:id', authenticated, requireAdmin, requireCsrf, async (req, res) => {
     const deleted = await institutionWrite(req, async () => {
       const institution = await institutionRecord(req.params.id);

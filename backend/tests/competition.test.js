@@ -1,3 +1,16 @@
+/**
+ * Archivo: backend/tests/competition.test.js
+ * Propósito: Pruebas de integración de disciplinas, eventos, participantes, equipos e inscripciones.
+ *
+ * Historias de usuario:
+ * - HU-06 · Gestión de disciplinas deportivas
+ * - HU-07 · Creación y consulta de torneos
+ * - HU-08 · Reglamento deportivo y apertura de inscripciones
+ * - HU-09 · Configuración de hackatones
+ * - HU-10 · Registro de participantes
+ * - HU-11 · Gestión de equipos deportivos y tecnológicos
+ * - HU-13 · Inscripción deportiva validada
+ */
 import { after, before, beforeEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';

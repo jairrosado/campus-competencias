@@ -1,3 +1,11 @@
+/**
+ * Archivo: backend/src/users.js
+ * Propósito: Rutas de cuentas: listar, crear y editar usuarios; perfil propio y consulta por id.
+ *
+ * Historias de usuario:
+ * - HU-02 · Gestión de cuentas de usuario
+ * - HU-03 · Consulta y edición del perfil propio
+ */
 import { Router } from 'express';
 import mongoose from 'mongoose';
 import { User, Session, publicUser, roles, states } from './models.js';
@@ -30,6 +38,7 @@ export function usersRouter(authenticated) {
   const router = Router();
   router.use(authenticated);
 
+  // HU-02 · Listado paginado de cuentas
   router.get('/', requireAdmin, async (req, res) => {
     const { page, limit } = listPagination(req.query);
     const search = escapedSearch(req.query.q);
@@ -51,6 +60,7 @@ export function usersRouter(authenticated) {
     res.json({ data: { items: items.map(publicUser), total, page, pages: Math.max(1, Math.ceil(total / limit)), summary: { total: all, active, admins } } });
   });
 
+  // HU-02 · Creación de cuentas con rol
   router.post('/', requireAdmin, requireCsrf, async (req, res) => {
     const input = accountInput(req.body, true);
     const passwordHash = await hashPassword(input.password);
@@ -61,6 +71,7 @@ export function usersRouter(authenticated) {
     res.status(201).json({ data: publicUser(user) });
   });
 
+  // HU-03 · Edición del perfil propio
   router.patch('/me', requireCsrf, async (req, res) => {
     const body = formFields(req.body, ['nombre', 'correo', 'currentPassword']);
     const user = await writeAccount(async () => {
@@ -80,6 +91,7 @@ export function usersRouter(authenticated) {
     res.json({ data: publicUser(user) });
   });
 
+  // HU-03 · Consulta de perfil por id
   router.get('/:id', async (req, res) => {
     validId(req.params.id);
     if (req.user.rol !== 'administrador' && String(req.user._id) !== req.params.id.toLowerCase()) {
@@ -90,6 +102,7 @@ export function usersRouter(authenticated) {
     res.json({ data: publicUser(user) });
   });
 
+  // HU-02 · Edición administrativa de cuentas
   router.patch('/:id', requireAdmin, requireCsrf, async (req, res) => {
     validId(req.params.id);
     const body = formFields(req.body, ['nombre', 'correo', 'rol', 'estado', 'password']);

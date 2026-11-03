@@ -1,3 +1,15 @@
+/**
+ * Archivo: backend/src/competition-models.js
+ * Propósito: Modelos Mongoose de disciplinas, torneos, hackatones, participantes, equipos e inscripciones.
+ *
+ * Historias de usuario:
+ * - HU-06 · Gestión de disciplinas deportivas
+ * - HU-07 · Creación y consulta de torneos
+ * - HU-09 · Configuración de hackatones
+ * - HU-10 · Registro de participantes
+ * - HU-11 · Gestión de equipos deportivos y tecnológicos
+ * - HU-13 · Inscripción deportiva validada
+ */
 import mongoose from 'mongoose';
 
 const { Schema } = mongoose;

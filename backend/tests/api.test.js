@@ -1,3 +1,14 @@
+/**
+ * Archivo: backend/tests/api.test.js
+ * Propósito: Pruebas de integración de acceso, cuentas e instituciones sobre una base temporal.
+ *
+ * Historias de usuario:
+ * - HU-01 · Acceso, configuración inicial y sesión segura
+ * - HU-02 · Gestión de cuentas de usuario
+ * - HU-03 · Consulta y edición del perfil propio
+ * - HU-04 · Registro y consulta de instituciones
+ * - HU-05 · Edición, eliminación y desactivación de instituciones
+ */
 import { after, before, beforeEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
