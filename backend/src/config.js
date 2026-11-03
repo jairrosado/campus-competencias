@@ -28,6 +28,6 @@ export function readConfig(env = process.env) {
     clientOrigin: new URL(env.CLIENT_ORIGIN || 'http://127.0.0.1:5173').origin,
     sessionHours,
     production,
-    allowInitialSetup: !production && env.ALLOW_INITIAL_SETUP === 'true',
+    allowInitialSetup: env.ALLOW_INITIAL_SETUP === 'true',
   };
 }
